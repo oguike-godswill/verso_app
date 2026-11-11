@@ -88,13 +88,16 @@ class _ProfileSheetState extends State<_ProfileSheet> {
     final publishedCount = myPieces.where((p) => p.published).length;
     final totalLikes = myPieces.fold<int>(0, (sum, p) => sum + p.likes);
     final totalNotes = myPieces.fold<int>(0, (sum, p) => sum + p.notes.length);
+    final size = MediaQuery.sizeOf(context);
+    final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
+    final isKeyboardOpen = bottomInset > 0;
 
     return ClipPath(
       clipper: TornTopClipper(seed: 14, depth: 12),
       child: Container(
         color: VC.cream,
-        constraints: BoxConstraints(maxHeight: MediaQuery.sizeOf(context).height * 0.86),
-        padding: EdgeInsets.fromLTRB(24, 30, 24, MediaQuery.viewInsetsOf(context).bottom + 24),
+        constraints: BoxConstraints(maxHeight: size.height * (isKeyboardOpen ? 0.94 : 0.86)),
+        padding: EdgeInsets.fromLTRB(24, isKeyboardOpen ? 18 : 30, 24, bottomInset + 20),
         child: ListView(
           shrinkWrap: true,
           children: [

@@ -610,12 +610,14 @@ class AppState extends ChangeNotifier {
     _persistLocalOnly();
     if (enableDiskPersistence) {
       try {
-        await neon.upsertUser(user);
-        await neon.upsertPiece(starterPiece);
+        await neon.upsertUser(user).timeout(const Duration(seconds: 10));
+        await neon.upsertPiece(starterPiece).timeout(const Duration(seconds: 10));
         neonSynced = true;
       } catch (e) {
         neonSynced = false;
-        return 'Could not save to database: ${neon.lastError ?? e.toString()}';
+        // The user and initial draft are already saved locally.
+        // Queue background sync to retry Neon without blocking user sign-up
+        _persist(changedUser: user, changedPiece: starterPiece);
       }
     }
     notifyListeners();
@@ -669,11 +671,11 @@ class AppState extends ChangeNotifier {
     _persistLocalOnly();
     if (enableDiskPersistence) {
       try {
-        await neon.upsertUser(u);
+        await neon.upsertUser(u).timeout(const Duration(seconds: 10));
         neonSynced = true;
       } catch (e) {
         neonSynced = false;
-        return 'Could not save profile to database: ${neon.lastError ?? e.toString()}';
+        _persist(changedUser: u);
       }
     }
     notifyListeners();

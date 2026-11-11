@@ -62,7 +62,7 @@ class NeonDb {
               'params': params,
             }),
           )
-          .timeout(const Duration(seconds: 10));
+          .timeout(const Duration(seconds: 14));
       if (r.statusCode >= 200 && r.statusCode < 300) {
         isConnected = true;
         lastError = null;

@@ -4,6 +4,7 @@ import 'package:verso/state.dart';
 import 'package:verso/screens/poem.dart';
 import 'package:verso/screens/exhibit.dart';
 import 'package:verso/screens/shell.dart';
+import 'package:verso/screens/auth.dart';
 
 void main() {
   testWidgets('PoemScreen renders all content, arch, stanzas, and action bar', (tester) async {
@@ -237,5 +238,36 @@ void main() {
     final err7 = await app.signIn('clara@verso.app', 'mypassword');
     expect(err7, isNull);
     expect(app.currentUser?.email, 'clara@verso.app');
+  });
+
+  testWidgets('AuthScreen layout expands smoothly when keyboard is open without double-padding', (tester) async {
+    final app = AppState(enableDiskPersistence: false);
+
+    tester.view.physicalSize = const Size(390 * 2.0, 844 * 2.0);
+    tester.view.devicePixelRatio = 2.0;
+    // Simulate keyboard open with 340dp bottom inset
+    tester.view.viewInsets = const FakeViewPadding(bottom: 340 * 2.0);
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+      tester.view.resetViewInsets();
+    });
+
+    await tester.pumpWidget(
+      AppScope(
+        state: app,
+        child: const MaterialApp(
+          home: AuthScreen(initialMode: 1),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Verify form elements are all present and accessible
+    expect(find.text('YOUR QUIET TABLE'), findsOneWidget);
+    expect(find.text('Claim your shelf.'), findsOneWidget);
+    expect(find.byKey(const ValueKey('auth_email')), findsOneWidget);
+    expect(find.byKey(const ValueKey('auth_name')), findsOneWidget);
+    expect(find.text('Create my Shelf'), findsOneWidget);
   });
 }

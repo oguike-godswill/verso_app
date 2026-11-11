@@ -5,13 +5,14 @@ import '../theme.dart';
 import 'shell.dart';
 
 class AuthScreen extends StatefulWidget {
-  const AuthScreen({super.key});
+  final int initialMode;
+  const AuthScreen({super.key, this.initialMode = 0});
   @override
   State<AuthScreen> createState() => _AuthScreenState();
 }
 
 class _AuthScreenState extends State<AuthScreen> {
-  int? _mode = 0; // 0 = Sign in, 1 = Create shelf
+  late int? _mode = widget.initialMode;
   int? _selectedAvatar = 0;
   final nameCtrl = TextEditingController();
   final handleCtrl = TextEditingController();
@@ -79,6 +80,8 @@ class _AuthScreenState extends State<AuthScreen> {
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.sizeOf(context);
+    final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
+    final isKeyboardOpen = bottomInset > 0;
     final canGoBack = Navigator.maybeOf(context)?.canPop() == true;
 
     return Scaffold(
@@ -92,10 +95,11 @@ class _AuthScreenState extends State<AuthScreen> {
               child: Container(color: VC.paper),
             ),
           ),
-          Positioned.fill(
-            bottom: size.height * 0.45,
-            child: CustomPaint(painter: WelcomeScenePainter(mode)),
-          ),
+          if (!isKeyboardOpen)
+            Positioned.fill(
+              bottom: size.height * 0.45,
+              child: CustomPaint(painter: WelcomeScenePainter(mode)),
+            ),
           // Top header
           SafeArea(
             child: Padding(
@@ -117,32 +121,43 @@ class _AuthScreenState extends State<AuthScreen> {
           Align(
             alignment: Alignment.bottomCenter,
             child: ClipPath(
-              clipper: TornTopClipper(seed: 9, depth: 12),
+              clipper: isKeyboardOpen ? null : TornTopClipper(seed: 9, depth: 12),
               child: Container(
                 color: VC.cream,
                 width: double.infinity,
-                constraints: BoxConstraints(maxHeight: size.height * 0.74),
-                padding: EdgeInsets.fromLTRB(26, 30, 26, MediaQuery.viewInsetsOf(context).bottom + 24),
-                child: SingleChildScrollView(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text('YOUR QUIET TABLE', style: labelStyle()),
-                      const SizedBox(height: 4),
-                      Text(
-                        mode == 0 ? 'Welcome back.' : 'Claim your shelf.',
-                        style: serifStyle(30),
-                      ),
-                      const SizedBox(height: 14),
-                      PillTabs(
-                        labels: const ['Sign in', 'Create shelf'],
-                        index: mode,
-                        onChanged: (i) => setState(() {
-                          _mode = i;
-                          errorMsg = null;
-                        }),
-                      ),
+                constraints: BoxConstraints(
+                  maxHeight: isKeyboardOpen ? size.height : size.height * 0.78,
+                ),
+                padding: EdgeInsets.fromLTRB(
+                  26,
+                  isKeyboardOpen ? 16 : 30,
+                  26,
+                  isKeyboardOpen ? 16 : 24,
+                ),
+                child: SafeArea(
+                  top: isKeyboardOpen,
+                  bottom: false,
+                  child: SingleChildScrollView(
+                    physics: const BouncingScrollPhysics(),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text('YOUR QUIET TABLE', style: labelStyle()),
+                        const SizedBox(height: 4),
+                        Text(
+                          mode == 0 ? 'Welcome back.' : 'Claim your shelf.',
+                          style: serifStyle(isKeyboardOpen ? 24 : 30),
+                        ),
+                        const SizedBox(height: 12),
+                        PillTabs(
+                          labels: const ['Sign in', 'Create shelf'],
+                          index: mode,
+                          onChanged: (i) => setState(() {
+                            _mode = i;
+                            errorMsg = null;
+                          }),
+                        ),
                       const SizedBox(height: 16),
                       if (mode == 1) ...[
                         Row(
@@ -258,8 +273,9 @@ class _AuthScreenState extends State<AuthScreen> {
               ),
             ),
           ),
-        ],
-      ),
+        ),
+      ],
+    ),
     );
   }
 
