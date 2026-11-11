@@ -1,0 +1,31 @@
+name: verso
+description: "Verso — A quiet exhibit for poems, journals, and letters."
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.13.7
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+  postgres: ^3.6.0
+  http: ^1.6.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
+  fonts:
+    - family: Manrope
+      fonts:
+        - asset: assets/fonts/Manrope.ttf
+    - family: Newsreader
+      fonts:
+        - asset: assets/fonts/Newsreader.ttf
+        - asset: assets/fonts/Newsreader-Italic.ttf
+          style: italic
