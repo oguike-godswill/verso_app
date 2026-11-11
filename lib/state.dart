@@ -510,26 +510,32 @@ class AppState extends ChangeNotifier {
     if (password.trim().isEmpty) return 'Please enter your passphrase.';
 
     var user = users[cleanEmail];
-    if (user == null && enableDiskPersistence) {
-      // Attempt remote fetch from Neon in case account was created on another device
+    String? networkError;
+    if (enableDiskPersistence) {
+      // Always attempt remote fetch from Neon to sync latest accounts across devices
       try {
-        final remoteUsers = await neon.fetchUsers();
+        final remoteUsers = await neon.fetchUsers().timeout(const Duration(seconds: 10));
         for (final ru in remoteUsers) {
           users[ru.email] = ru;
         }
         user = users[cleanEmail];
-      } catch (_) {}
+      } catch (e) {
+        networkError = neon.lastError ?? e.toString();
+      }
     }
 
     if (user == null) {
-      return 'No account found for $cleanEmail.';
+      if (networkError != null) {
+        return 'Could not connect to database ($networkError). Check your connection and try again.';
+      }
+      return 'No account found for $cleanEmail. If you are new, switch to "Create shelf".';
     }
     if (user.passwordHash != _hash(password.trim())) {
       return 'Incorrect passphrase. Try again.';
     }
     currentUser = user;
     tab = 0;
-    _persist(changedUser: user);
+    _persistLocalOnly();
     notifyListeners();
     return null;
   }

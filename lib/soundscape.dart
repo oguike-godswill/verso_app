@@ -3,6 +3,7 @@ import 'dart:math';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_tts/flutter_tts.dart';
 import 'theme.dart';
 
 enum Soundscape { off, rainOnWater, distantOars, nightHarbor }
@@ -172,17 +173,26 @@ class _SoundscapeBadgeState extends State<SoundscapeBadge> with SingleTickerProv
 class TactileAudio {
   static void playPaperTurn() {
     try {
+      SystemSound.play(SystemSoundType.click);
+    } catch (_) {}
+    try {
       HapticFeedback.lightImpact();
     } catch (_) {}
   }
 
   static void playQuillScratch() {
     try {
+      SystemSound.play(SystemSoundType.click);
+    } catch (_) {}
+    try {
       HapticFeedback.selectionClick();
     } catch (_) {}
   }
 
   static void playWaterRipple() {
+    try {
+      SystemSound.play(SystemSoundType.click);
+    } catch (_) {}
     try {
       HapticFeedback.selectionClick();
     } catch (_) {}
@@ -260,10 +270,37 @@ class ReadAloudPlayer extends StatefulWidget {
 }
 
 class _ReadAloudPlayerState extends State<ReadAloudPlayer> {
+  FlutterTts? _tts;
   Timer? _timer;
   int? _current;
 
   bool get isPlaying => _timer != null;
+
+  @override
+  void initState() {
+    super.initState();
+    _initTts();
+  }
+
+  void _initTts() {
+    try {
+      _tts = FlutterTts();
+      _tts?.setLanguage('en-US');
+      _tts?.setSpeechRate(0.38);
+      _tts?.setPitch(0.95);
+      _tts?.setVolume(1.0);
+    } catch (_) {}
+  }
+
+  void _speakLine(int idx) {
+    if (idx < 0 || idx >= widget.lines.length) return;
+    final text = widget.lines[idx].trim();
+    if (text.isEmpty) return;
+    try {
+      _tts?.stop();
+      _tts?.speak(text);
+    } catch (_) {}
+  }
 
   void _toggle() {
     if (isPlaying) {
@@ -272,7 +309,8 @@ class _ReadAloudPlayerState extends State<ReadAloudPlayer> {
       if (widget.lines.isEmpty) return;
       setState(() => _current = 0);
       widget.onActiveLineChanged(0);
-      _timer = Timer.periodic(const Duration(milliseconds: 2200), (_) {
+      _speakLine(0);
+      _timer = Timer.periodic(const Duration(milliseconds: 2500), (_) {
         if (!mounted) return;
         final next = (_current ?? 0) + 1;
         if (next >= widget.lines.length) {
@@ -280,12 +318,16 @@ class _ReadAloudPlayerState extends State<ReadAloudPlayer> {
         } else {
           setState(() => _current = next);
           widget.onActiveLineChanged(next);
+          _speakLine(next);
         }
       });
     }
   }
 
   void _stop() {
+    try {
+      _tts?.stop();
+    } catch (_) {}
     _timer?.cancel();
     _timer = null;
     if (mounted) {
@@ -296,6 +338,9 @@ class _ReadAloudPlayerState extends State<ReadAloudPlayer> {
 
   @override
   void dispose() {
+    try {
+      _tts?.stop();
+    } catch (_) {}
     _timer?.cancel();
     super.dispose();
   }

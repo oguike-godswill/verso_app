@@ -283,10 +283,23 @@ class LocalStore {
   static File? _resolveFile() {
     if (kIsWeb) return null;
     try {
-      final home = Platform.environment['USERPROFILE'] ?? Platform.environment['HOME'] ?? Directory.current.path;
-      return File('$home${Platform.pathSeparator}.verso_store_v2.json');
+      final home = Platform.environment['USERPROFILE'] ?? Platform.environment['HOME'];
+      if (home != null && home.isNotEmpty) {
+        return File('$home${Platform.pathSeparator}.verso_store_v2.json');
+      }
+      // On Android / iOS: use process-writable system directory
+      final temp = Directory.systemTemp;
+      final targetDir = Directory('${temp.path}${Platform.pathSeparator}verso_data');
+      if (!targetDir.existsSync()) {
+        targetDir.createSync(recursive: true);
+      }
+      return File('${targetDir.path}${Platform.pathSeparator}verso_store_v2.json');
     } catch (_) {
-      return null;
+      try {
+        return File('${Directory.systemTemp.path}${Platform.pathSeparator}verso_store_v2.json');
+      } catch (_) {
+        return null;
+      }
     }
   }
 

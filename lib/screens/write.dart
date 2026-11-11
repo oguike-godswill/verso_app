@@ -29,10 +29,13 @@ class _WriteScreenState extends State<WriteScreen> {
     super.initState();
     history.add(body.text);
     body.addListener(_onBody);
-    title.addListener(() {
-      widget.piece.title = title.text;
-      setState(() => saved = true);
-    });
+    title.addListener(_onTitle);
+  }
+
+  void _onTitle() {
+    TactileAudio.playQuillScratch();
+    widget.piece.title = title.text;
+    setState(() => saved = true);
   }
 
   @override
@@ -77,6 +80,7 @@ class _WriteScreenState extends State<WriteScreen> {
   }
 
   void _onBody() {
+    TactileAudio.playQuillScratch();
     if (history.isEmpty || history.last != body.text) {
       history.add(body.text);
       future.clear();
