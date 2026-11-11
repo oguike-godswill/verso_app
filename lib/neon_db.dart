@@ -46,46 +46,57 @@ class NeonDb {
     }
   }
 
-  /// Executes a SQL query via Neon HTTP SQL API first (fast, firewall-proof, works on Web & Desktop)
-  /// with native Postgres TCP fallback.
+  /// Executes a SQL query via Neon HTTP SQL API first (fast, firewall-proof, works on Web & Mobile)
+  /// with automatic retry and native TCP fallback.
   Future<List<Map<String, dynamic>>> query(String sql, [List<Object?> params = const []]) async {
-    try {
-      final r = await http
-          .post(
-            Uri.parse(_httpSqlEndpoint),
-            headers: {
-              'Neon-Connection-String': connectionUrl,
-              'Content-Type': 'text/plain',
-            },
-            body: jsonEncode({
-              'query': sql,
-              'params': params,
-            }),
-          )
-          .timeout(const Duration(seconds: 14));
-      if (r.statusCode >= 200 && r.statusCode < 300) {
-        isConnected = true;
-        lastError = null;
-        final body = jsonDecode(r.body) as Map<String, dynamic>;
-        final rows = (body['rows'] as List?) ?? const [];
-        return rows.map((e) => Map<String, dynamic>.from(e as Map)).toList();
-      } else {
-        lastError = 'HTTP ${r.statusCode}: ${r.body}';
+    for (var attempt = 1; attempt <= 2; attempt++) {
+      try {
+        final r = await http
+            .post(
+              Uri.parse(_httpSqlEndpoint),
+              headers: {
+                'Neon-Connection-String': connectionUrl,
+                'Content-Type': 'text/plain',
+              },
+              body: jsonEncode({
+                'query': sql,
+                'params': params,
+              }),
+            )
+            .timeout(const Duration(seconds: 14));
+        if (r.statusCode >= 200 && r.statusCode < 300) {
+          isConnected = true;
+          lastError = null;
+          final body = jsonDecode(r.body) as Map<String, dynamic>;
+          final rows = (body['rows'] as List?) ?? const [];
+          return rows.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+        } else {
+          lastError = 'HTTP ${r.statusCode}: ${r.body}';
+        }
+      } catch (e) {
+        lastError = e.toString();
       }
-    } catch (e) {
-      lastError = e.toString();
+      if (attempt == 1) {
+        await Future.delayed(const Duration(milliseconds: 600));
+      }
     }
 
-    // Native TCP fallback if HTTP fails
-    final conn = await _getConnection();
-    if (conn != null) {
-      final res = await conn.execute(
-        Sql(sql),
-        parameters: params,
-      );
-      isConnected = true;
-      lastError = null;
-      return res.map((row) => row.toColumnMap()).toList();
+    // Native TCP fallback if HTTP fails and not on Web
+    if (!kIsWeb) {
+      try {
+        final conn = await _getConnection();
+        if (conn != null) {
+          final res = await conn.execute(
+            Sql(sql),
+            parameters: params,
+          );
+          isConnected = true;
+          lastError = null;
+          return res.map((row) => row.toColumnMap()).toList();
+        }
+      } catch (e) {
+        lastError = e.toString();
+      }
     }
 
     isConnected = false;
