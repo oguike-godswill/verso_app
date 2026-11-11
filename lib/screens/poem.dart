@@ -274,7 +274,12 @@ class _PoemScreenState extends State<PoemScreen> {
                     duration: const Duration(milliseconds: 280),
                     color: paperBg,
                     child: ListView(
-                      padding: const EdgeInsets.fromLTRB(26, 32, 26, 175),
+                      padding: EdgeInsets.fromLTRB(
+                        26,
+                        32,
+                        26,
+                        230 + MediaQuery.paddingOf(context).bottom,
+                      ),
                       children: [
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -443,13 +448,36 @@ class _PoemScreenState extends State<PoemScreen> {
                             );
                           },
                         ),
+                        if (p.allowHold) ...[
+                          const SizedBox(height: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                            decoration: BoxDecoration(
+                              color: paperFg.withValues(alpha: 0.04),
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(color: paperRule.withValues(alpha: 0.7)),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(Icons.touch_app_outlined, size: 16, color: VC.muted),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    'TAP AND HOLD ANY LINE TO SAVE IT TO YOUR PROFILE.',
+                                    style: labelStyle(),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                         if (p.notes.isNotEmpty) ...[
-                          Divider(height: 28, color: paperRule),
+                          Divider(height: 32, color: paperRule),
                           Text('QUIET NOTES LEFT HERE', style: labelStyle()),
-                          const SizedBox(height: 6),
+                          const SizedBox(height: 8),
                           for (final n in p.notes)
                             Padding(
-                              padding: const EdgeInsets.only(top: 6),
+                              padding: const EdgeInsets.only(top: 8),
                               child: Row(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
@@ -461,8 +489,7 @@ class _PoemScreenState extends State<PoemScreen> {
                               ),
                             ),
                         ],
-                        const SizedBox(height: 14),
-                        Text('TAP AND HOLD ANY LINE TO SAVE IT TO YOUR PROFILE.', style: labelStyle()),
+                        const SizedBox(height: 24),
                       ],
                     ),
                   ),

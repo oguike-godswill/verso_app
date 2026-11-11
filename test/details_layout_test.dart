@@ -81,6 +81,61 @@ void main() {
     tester.view.resetDevicePixelRatio();
   });
 
+  testWidgets('PoemScreen renders long poem with multiple notes and ensures bottom clearance for action bar', (tester) async {
+    final app = AppState(enableDiskPersistence: false);
+    final longPiece = Piece(
+      id: 'long-poem-1',
+      title: 'A Very Long Reflection',
+      body: List.generate(20, (i) => 'Stanza $i line of quiet verses under the evening sky.').join('\n\n'),
+      notes: [
+        NoteReply(fromHandle: '@marlo', text: 'This quietness stays with me.'),
+        NoteReply(fromHandle: '@sora', text: 'A truly luminous passage.'),
+        NoteReply(fromHandle: '@clara', text: 'Saved to my night shelf.'),
+      ],
+    );
+
+    tester.view.physicalSize = const Size(412 * 2.0, 915 * 2.0);
+    tester.view.devicePixelRatio = 2.0;
+    tester.view.padding = const FakeViewPadding(bottom: 48 * 2.0);
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+      tester.view.resetPadding();
+    });
+
+    await tester.pumpWidget(
+      AppScope(
+        state: app,
+        child: MaterialApp(
+          home: PoemScreen(piece: longPiece),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Scroll down until the hint and notes come into view
+    await tester.scrollUntilVisible(
+      find.text('TAP AND HOLD ANY LINE TO SAVE IT TO YOUR PROFILE.'),
+      300,
+      scrollable: find.byType(Scrollable),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('TAP AND HOLD ANY LINE TO SAVE IT TO YOUR PROFILE.'), findsOneWidget);
+    expect(find.byIcon(Icons.touch_app_outlined), findsOneWidget);
+
+    await tester.scrollUntilVisible(
+      find.text('Saved to my night shelf.'),
+      300,
+      scrollable: find.byType(Scrollable),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('QUIET NOTES LEFT HERE'), findsOneWidget);
+    expect(find.text('Saved to my night shelf.'), findsOneWidget);
+    expect(find.text('Leave a note'), findsOneWidget);
+  });
+
   testWidgets('Exhibit tap opens PoemScreen and back button returns', (tester) async {
     final app = AppState(enableDiskPersistence: false);
 
